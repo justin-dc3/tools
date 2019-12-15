@@ -133,8 +133,8 @@ while (true); do
   _ts1=$_ts2
   eval ${_cmd} > ${_temp2} && _ts2=$(date +%Y%m%d%H%M%S)
   (( tsdiff=$_ts2-$_ts1 ))
-  old_current=($(cat ${_temp1} | awk '{print$3}')) && old_log=($(cat ${_temp1} | awk '{print$4}'))
-  new_current=($(cat ${_temp2} | awk '{print$3}')) && new_log=($(cat ${_temp2} | awk '{print$4}')) && new_lag=($(cat ${_temp2} | awk '{print$5}')) && consumers=$(cat ${_temp2} | awk '{print$6}' | sort -u | wc -l)
+  old_current=($(cat ${_temp1} | awk '{print$3}')) && old_log=($(cat ${_temp1} | awk '{print$4}')) && consumers=$(cat ${_temp1} | awk '{print$6}' | sort -u | wc -l)
+  new_current=($(cat ${_temp2} | awk '{print$3}')) && new_log=($(cat ${_temp2} | awk '{print$4}')) && new_lag=($(cat ${_temp2} | awk '{print$5}'))
   let count=${#old_current[@]}
   let part=0
   let rate_in=0
