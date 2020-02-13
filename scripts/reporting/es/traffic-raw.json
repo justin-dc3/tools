@@ -1,0 +1,15 @@
+{
+  "size" : SIZE,
+  "sort" : [ "_doc" ],
+  "query" : {
+    "constant_score" : {
+      "filter" : {
+        "bool" : {
+          "must" : [
+            { "match" : { "sensor" : "SENSOR" }}
+	  ]
+	}
+      }
+    }
+  }
+}

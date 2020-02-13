@@ -1,0 +1,83 @@
+-- CREATE FOREIGN TABLE reporting.ext_threats_list_SENSOR_COMPACT (
+-- sensor_uuid text,
+-- threat text
+-- ) SERVER esdata 
+-- OPTIONS (filename '/home/ubuntu/es/threats_list_SENSOR.txt', delimiter '|');
+-- 
+-- CREATE TABLE reporting.stage_threats_list_SENSOR_COMPACT AS
+-- SELECT
+-- sensor_uuid::uuid AS sensor_uuid,
+-- threat::varchar AS threat_address
+-- FROM reporting.ext_threats_list_SENSOR_COMPACT;
+-- 
+-- ALTER TABLE reporting.stage_threats_list_SENSOR_COMPACT ADD PRIMARY KEY (sensor_uuid, threat_address);
+-- CREATE INDEX idx_stage_threats_list_SENSOR_COMPACT_threat_address ON reporting.stage_threats_list_SENSOR_COMPACT (threat_address);
+-- DROP FOREIGN TABLE reporting.ext_threats_list_SENSOR_COMPACT;
+-- 
+-- CREATE FOREIGN TABLE reporting.ext_traffic_raw_SENSOR_COMPACT (
+-- sensor_uuid text,
+-- source text,
+-- dest text,
+-- protocol text,
+-- sport int,
+-- dport int,
+-- seen text,
+-- score int,
+-- sent bigint,
+-- received bigint,
+-- country text,
+-- location text 
+-- ) SERVER esdata 
+-- OPTIONS (filename '/home/ubuntu/es/traffic_raw_SENSOR.txt', delimiter '|');
+-- 
+-- CREATE TABLE reporting.stage_traffic_raw_SENSOR_COMPACT (
+--   raw_id bigserial NOT NULL,
+--   sensor_uuid uuid NOT NULL,
+--   source_address varchar NOT NULL,
+--   dest_address varchar NOT NULL,
+--   protocol_name varchar NOT NULL,
+--   source_port int NOT NULL,
+--   dest_port int NOT NULL,
+--   threat_address varchar DEFAULT NULL,
+--   internal_address varchar DEFAULT NULL,
+--   originating varchar DEFAULT NULL,
+--   connection_port int DEFAULT 0,
+--   seen timestamptz,
+--   threat_score int,
+--   sent_bytes bigint,
+--   received_bytes bigint,
+--   country_code varchar,
+--   latitude numeric,
+--   longitude numeric,
+--   CONSTRAINT pk_stage_traffic_raw_SENSOR_COMPACT PRIMARY KEY (raw_id)
+-- );;
+--   
+-- INSERT INTO reporting.stage_traffic_raw_SENSOR_COMPACT 
+-- (sensor_uuid, source_address, dest_address, protocol_name, source_port, dest_port, seen, threat_score, sent_bytes, received_bytes, country_code, latitude, longitude)
+-- SELECT
+-- sensor_uuid::uuid,
+-- source::varchar,
+-- dest::varchar,
+-- protocol::varchar,
+-- sport,
+-- dport,
+-- seen::timestamptz,
+-- score,
+-- sent,
+-- received,
+-- NULLIF(country,'')::varchar,
+-- NULLIF(split_part(location,',',1),'')::numeric,
+-- NULLIF(split_part(location,',',2),'')::numeric
+-- FROM reporting.ext_traffic_raw_SENSOR_COMPACT;
+-- 
+-- CREATE INDEX idx_stage_traffic_raw_SENSOR_COMPACT_source_address ON reporting.stage_traffic_raw_SENSOR_COMPACT (source_address);
+-- CREATE INDEX idx_stage_traffic_raw_SENSOR_COMPACT_dest_address ON reporting.stage_traffic_raw_SENSOR_COMPACT (dest_address);
+-- DROP FOREIGN TABLE reporting.ext_traffic_raw_SENSOR_COMPACT;
+-- 
+UPDATE reporting.stage_traffic_raw_SENSOR_COMPACT
+SET threat_address = source_address, internal_address = dest_address, originating = 'EXTERNALLY', connection_port = source_port, received_bytes = sent_bytes, sent_bytes = received_bytes WHERE source_address IN (
+SELECT threat_address FROM reporting.stage_threats_list_SENSOR_COMPACT);
+UPDATE reporting.stage_traffic_raw_SENSOR_COMPACT
+SET threat_address = dest_address, internal_address = source_address, originating = 'INTERNALLY', connection_port = dest_port WHERE dest_address IN (
+SELECT threat_address FROM reporting.stage_threats_list_SENSOR_COMPACT)
+AND threat_address IS NULL;

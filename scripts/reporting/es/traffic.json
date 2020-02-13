@@ -1,0 +1,66 @@
+{
+  "size" : 0,
+  "query" : {
+    "constant_score" : {
+      "filter" : {
+        "bool" : {
+          "must" : [
+            { "match" : { "sensor" : "SENSOR" }}
+          ]
+        }
+      }
+    }
+  },
+  "aggs" : {
+    "connections" : {
+      "composite" : {
+        "size" : SIZE,
+        "after" : { "sensor" : "AFTER_SENSOR", "source" : "AFTER_SOURCE", "dest" : "AFTER_DEST", "proto" : "AFTER_PROTO", "sport" : AFTER_SPORT, "dport" : AFTER_DPORT },
+        "sources" : [
+	  { "sensor" : { "terms" : { "field" : "sensor" }}},
+          { "source" : { "terms" : { "field" : "src" }}},
+          { "dest" : { "terms" : { "field" : "dst" }}},
+          { "proto" : { "terms" : { "field" : "proto" }}},
+          { "sport" : { "terms" : { "field" : "sport" }}},
+          { "dport" : { "terms" : { "field" : "dport" }}}
+        ]
+      },
+      "aggs" : {
+        "first" : {
+          "min" : {
+            "field" : "seen"
+          }
+        },
+        "last" : {
+          "max" : {
+            "field" : "seen"
+          }
+        },
+        "count" : {
+          "sum" : {
+            "field" : "count",
+            "missing" : 1
+          }
+        },
+        "sent" : {
+          "sum" : {
+            "field" : "sent"
+          }
+        },
+        "received" : {
+          "sum" : {
+            "field" : "recv"
+          }
+        },
+        "latest" : {
+          "top_hits" : {
+            "sort" : [
+              { "seen" : { "order" : "desc" }}
+            ],
+            "size" : 1
+          }
+        }
+      }
+    }
+  }
+}

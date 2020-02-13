@@ -1,0 +1,26 @@
+{
+  "size" : 0,
+  "query" : {
+    "constant_score" : {
+      "filter" : {
+        "bool" : {
+          "must" : [
+            { "match" : { "sensor" : "SENSOR" }}
+          ]
+        }
+      }
+    }
+  },
+  "aggs" : {
+    "threats" : {
+      "composite" : {
+        "size" : SIZE,
+        "after" : { "sensor" : "AFTER_SENSOR", "threat" : "AFTER_THREAT" },
+        "sources" : [
+          { "sensor" : { "terms" : { "field" : "sensor" }}},
+          { "threat" : { "terms" : { "field" : "threat" }}}
+        ]
+      }
+    }
+  }
+}
